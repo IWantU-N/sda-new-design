@@ -1,0 +1,14 @@
+<Window x:Class="SdaDesk.CreateMaFileWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Создать maFile" Width="520" Height="680" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="{StaticResource CanvasBrush}" Foreground="#EDF3FA" FontFamily="Segoe UI Variable, Segoe UI">
+    <Grid Margin="28"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <StackPanel><TextBlock Text="НОВЫЙ ФАЙЛ" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" FontSize="10"/><TextBlock Text="Создать maFile" FontSize="26" FontWeight="SemiBold" Margin="0,5,0,0"/><TextBlock Text="Введи данные существующего Steam-аутентификатора. Этот мастер не регистрирует аккаунт в Steam." Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,7,0,20"/></StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><StackPanel>
+            <TextBlock Text="Имя аккаунта" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/><TextBox x:Name="AccountNameBox" Margin="0,0,0,15"/>
+            <TextBlock Text="shared_secret · обязательно" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/><TextBox x:Name="SharedSecretBox" Margin="0,0,0,5"/><TextBlock Text="Ключ Base64, используемый для генерации кодов Steam Guard." FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,15"/>
+            <TextBlock Text="identity_secret · необязательно" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/><TextBox x:Name="IdentitySecretBox" Margin="0,0,0,15"/>
+            <TextBlock Text="revocation_code · необязательно" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/><TextBox x:Name="RevocationCodeBox" Margin="0,0,0,15"/>
+            <TextBlock Text="serial_number · необязательно" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/><TextBox x:Name="SerialNumberBox" Margin="0,0,0,15"/>
+            <Border Background="#241C16" BorderBrush="#4D3925" BorderThickness="1" CornerRadius="10" Padding="12"><TextBlock Text="Файл будет записан в открытом виде. Сохрани резервную копию в безопасном месте и никому не отправляй shared_secret или identity_secret." FontSize="11" Foreground="#E7C69D" TextWrapping="Wrap"/></Border>
+        </StackPanel></ScrollViewer>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0"><Button Content="Отмена" Click="Cancel_Click" Margin="0,0,9,0"/><Button Content="Создать maFile" Click="Save_Click" Background="{StaticResource AccentBrush}" Foreground="#0C1711" BorderBrush="{StaticResource AccentBrush}"/></StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,8 @@
+.vs/
+bin/
+obj/
+.dotnet-home/
+maFiles/
+pending/
+*.maFile
+*.mafile

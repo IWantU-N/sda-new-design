@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>SDA Desk</AssemblyName>
+    <RootNamespace>SdaDesk</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SteamKit2" Version="3.4.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <ProjectReference Include="lib\SteamAuth\SteamAuth\SteamAuth.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="lib\**\*.cs" />
+  </ItemGroup>
+</Project>
