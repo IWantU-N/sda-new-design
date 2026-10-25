@@ -17,6 +17,7 @@ public partial class ConfirmationsWindow : Window
     private bool _busy;
     private bool _changingAccountSelection;
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private const int MarketPurchaseConfirmationType = 12;
 
     public ConfirmationsWindow(IEnumerable<Account> accounts)
     {
@@ -62,9 +63,8 @@ public partial class ConfirmationsWindow : Window
                     }
                     var confirmations = await steamAccount.FetchConfirmationsAsync();
                     _steamAccounts[account] = steamAccount;
-                    var relevant = confirmations.Where(c => c.ConfType is Confirmation.EMobileConfirmationType.Trade or Confirmation.EMobileConfirmationType.MarketListing).ToArray();
-                    ignoredCount += confirmations.Length - relevant.Length;
-                    foreach (var confirmation in relevant)
+                    ignoredCount += confirmations.Count(c => !IsActionableType(c.ConfType));
+                    foreach (var confirmation in confirmations)
                         _items.Add(new ConfirmationItem(account, steamAccount, confirmation));
                 }
                 catch (Exception ex) { errors.Add($"{account.Name}: {ex.Message}"); }
@@ -72,8 +72,9 @@ public partial class ConfirmationsWindow : Window
 
             EmptyState.Visibility = _items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             ConfirmationList.Visibility = _items.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
-            var suffix = ignoredCount > 0 ? $"; других типов пропущено: {ignoredCount}" : string.Empty;
-            StatusText.Text = $"Найдено подтверждений: {_items.Count}{suffix}";
+            var actionableCount = _items.Count(i => i.IsActionable);
+            var suffix = ignoredCount > 0 ? $"; только просмотр: {ignoredCount}" : string.Empty;
+            StatusText.Text = $"Найдено: {_items.Count}; можно обработать: {actionableCount}{suffix}";
             if (errors.Count > 0)
             {
                 StatusText.Text += $"; аккаунтов с ошибкой: {errors.Count}";
@@ -88,6 +89,11 @@ public partial class ConfirmationsWindow : Window
             UpdateSelectionControls();
         }
     }
+
+    private static bool IsActionableType(Confirmation.EMobileConfirmationType type) =>
+        type is Confirmation.EMobileConfirmationType.Trade
+            or Confirmation.EMobileConfirmationType.MarketListing
+            || (int)type == MarketPurchaseConfirmationType;
 
     private static SteamGuardAccount CreateSteamAccount(Account account)
     {
@@ -181,8 +187,9 @@ public partial class ConfirmationsWindow : Window
 
     private void AllConfirmations_Click(object sender, RoutedEventArgs e)
     {
-        var selected = _items.Any(i => !i.IsSelected);
-        foreach (var item in _items) item.IsSelected = selected;
+        var actionable = _items.Where(i => i.IsActionable).ToArray();
+        var selected = actionable.Any(i => !i.IsSelected);
+        foreach (var item in actionable) item.IsSelected = selected;
         UpdateSelectionControls();
     }
 
@@ -190,11 +197,12 @@ public partial class ConfirmationsWindow : Window
 
     private void UpdateSelectionControls()
     {
-        var selectedCount = _items.Count(i => i.IsSelected);
-        SelectedCountText.Text = $"Выбрано: {selectedCount} из {_items.Count}";
-        AllConfirmationsCheckBox.IsChecked = selectedCount == 0 ? false : selectedCount == _items.Count ? true : null;
+        var actionableCount = _items.Count(i => i.IsActionable);
+        var selectedCount = _items.Count(i => i.IsSelected && i.IsActionable);
+        SelectedCountText.Text = $"Выбрано: {selectedCount} из {actionableCount}";
+        AllConfirmationsCheckBox.IsChecked = selectedCount == 0 ? false : selectedCount == actionableCount ? true : null;
         AccountChoicesList.IsEnabled = !_busy;
-        AllConfirmationsCheckBox.IsEnabled = !_busy && _items.Count > 0;
+        AllConfirmationsCheckBox.IsEnabled = !_busy && actionableCount > 0;
         ConfirmSelectedButton.IsEnabled = !_busy && selectedCount > 0;
         DenySelectedButton.IsEnabled = !_busy && selectedCount > 0;
         ConfirmSelectedButton.Content = _busy ? "Обрабатываем…" : "Подтвердить выбранные";
@@ -277,7 +285,9 @@ public partial class ConfirmationsWindow : Window
         public string TypeName { get; }
         public string Headline { get; }
         public string SummaryText { get; }
-        public bool IsSelected { get => _isSelected; set { _isSelected = value; PropertyChanged?.Invoke(this, new(nameof(IsSelected))); } }
+        public string ActionabilityText => IsActionable ? string.Empty : "Только просмотр · подтверждать нельзя";
+        public bool IsActionable => IsActionableType(Raw.ConfType);
+        public bool IsSelected { get => _isSelected; set { _isSelected = value && IsActionable; PropertyChanged?.Invoke(this, new(nameof(IsSelected))); } }
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public ConfirmationItem(Account account, SteamGuardAccount steamAccount, Confirmation raw)
@@ -285,12 +295,19 @@ public partial class ConfirmationsWindow : Window
             Account = account;
             SteamAccount = steamAccount;
             Raw = raw;
-            TypeName = raw.ConfType switch
-            {
-                Confirmation.EMobileConfirmationType.Trade => "ОБМЕН",
-                Confirmation.EMobileConfirmationType.MarketListing => "ПРОДАЖА",
-                _ => "STEAM",
-            };
+            TypeName = (int)raw.ConfType == MarketPurchaseConfirmationType
+                ? "ПОКУПКА"
+                : raw.ConfType switch
+                {
+                    Confirmation.EMobileConfirmationType.Trade => "ОБМЕН",
+                    Confirmation.EMobileConfirmationType.MarketListing => "ПРОДАЖА",
+                    Confirmation.EMobileConfirmationType.Test => "ПРОВЕРКА",
+                    Confirmation.EMobileConfirmationType.FeatureOptOut => "ИЗМЕНЕНИЕ ЗАЩИТЫ",
+                    Confirmation.EMobileConfirmationType.PhoneNumberChange => "СМЕНА ТЕЛЕФОНА",
+                    Confirmation.EMobileConfirmationType.AccountRecovery => "ВОССТАНОВЛЕНИЕ АККАУНТА",
+                    _ => $"ТИП #{(int)raw.ConfType}",
+                };
+            _isSelected = IsActionable;
             Headline = string.IsNullOrWhiteSpace(raw.Headline) ? "Действие Steam" : raw.Headline;
             SummaryText = raw.Summary is null ? string.Empty : string.Join(Environment.NewLine, raw.Summary);
         }

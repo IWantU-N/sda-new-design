@@ -43,7 +43,8 @@ namespace SteamAuth
             MarketListing = 3,
             FeatureOptOut = 4,
             PhoneNumberChange = 5,
-            AccountRecovery = 6
+            AccountRecovery = 6,
+            MarketPurchase = 12
         }
     }
 
